@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: finance
+          POSTGRES_USER: finance_owner
+          POSTGRES_PASSWORD: ci-only-password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U finance_owner -d finance"
+          --health-interval 2s --health-retries 30
+    env:
+      DATABASE_URL: postgresql://finance_owner:ci-only-password@localhost:5432/finance
+      REPORTING_DB_USER: reporting_app
+      REPORTING_DB_PASSWORD: ci-only-reader-password
+      REPORTING_DATABASE_URL: postgresql://reporting_app:ci-only-reader-password@localhost:5432/finance
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - name: Lint
+        run: ruff check .
+      - name: Migrate, load and run controls
+        run: python -m scripts.setup
+      - name: Migrations are reversible
+        run: alembic downgrade base && python -m scripts.setup
+      - name: Tests
+        run: python -m pytest -v
+      - name: Docker image builds
+        run: docker build -t finance-reporting .

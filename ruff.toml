@@ -1,0 +1,10 @@
+line-length = 120
+target-version = "py313"
+
+[lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["B008", "B905"]  # FastAPI Form(...) defaults; zip strictness
+
+[lint.per-file-ignores]
+# Month-loop helpers in the generator are called within their own iteration.
+"datagen/generate.py" = ["B023"]
