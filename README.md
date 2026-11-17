@@ -27,6 +27,10 @@ minute: it creates the database, generates and loads 24 months of ledger
 data, creates a read-only login for the app and runs every control. If a
 control fails, the app does not start.
 
+If Docker reports that a port is not available, another program is using it.
+Pick free ones, for example `DB_HOST_PORT=25432 APP_HOST_PORT=8080 docker compose up --build`
+(PowerShell: `$env:DB_HOST_PORT=25432; docker compose up --build`).
+
 | Demo user | Sees |
 |---|---|
 | Ines Carvalho, CFO | Every report, every cost centre |
@@ -188,8 +192,8 @@ sign-in, view, export and refused request.
 ## Tests
 
 ```bash
-export DATABASE_URL=postgresql://finance_owner:change-me-local-only@localhost:5432/finance
-export REPORTING_DATABASE_URL=postgresql://reporting_app:change-me-too@localhost:5432/finance
+export DATABASE_URL=postgresql://finance_owner:change-me-local-only@localhost:15432/finance
+export REPORTING_DATABASE_URL=postgresql://reporting_app:change-me-too@localhost:15432/finance
 python -m pytest
 ```
 
