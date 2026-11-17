@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Finance reporting{% endblock %} · {{ company_name }}</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+{% if demo_mode %}<div class="demo-banner">Demo mode: fictional company, synthetic data, demo sign-in. Not connected to any real system.</div>{% endif %}
+<header class="topbar">
+  <a class="brand" href="/">{{ company_name }} <span>Finance reporting</span></a>
+  {% if user %}
+  <div class="who">
+    <span>{{ user.display_name }}{% if user.job_title %} · {{ user.job_title }}{% endif %}</span>
+    <form method="post" action="/logout"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="link">Sign out</button></form>
+  </div>
+  {% endif %}
+</header>
+<div class="layout">
+  {% if user %}
+  <nav class="sidebar">
+    {% for r in user.reports.values() %}
+    <a href="/reports/{{ r.key }}" {% if active == r.key %}class="active"{% endif %}>{{ r.title }}</a>
+    {% endfor %}
+  </nav>
+  {% endif %}
+  <main>{% block content %}{% endblock %}</main>
+</div>
+{% block scripts %}{% endblock %}
+</body>
+</html>
