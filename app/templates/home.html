@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<h1>Reports</h1>
+{% if user.reports %}
+<div class="tiles">
+  {% for r in user.reports.values() %}
+  <a class="tile" href="/reports/{{ r.key }}"><strong>{{ r.title }}</strong><span>{{ r.description }}</span></a>
+  {% endfor %}
+</div>
+{% if user.cost_centres|length < 5 %}
+<p class="muted">You can see figures for: {{ user.cost_centres.values()|join(", ") or "no cost centres" }}.</p>
+{% endif %}
+{% else %}
+<p>You are signed in but have not been given access to any report yet. Ask the finance team.</p>
+{% endif %}
+{% endblock %}

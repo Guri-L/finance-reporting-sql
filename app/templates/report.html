@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{{ report.title }}{% endblock %}
+{% macro export_qs() %}period={{ period.period_key }}{% if report.scope == "cost_centre" %}&cost_centre={{ selected_cc }}{% endif %}{% endmacro %}
+{% block content %}
+<div class="report-head">
+  <div>
+    <h1>{{ report.title }}</h1>
+    <p class="muted">{{ period.period_label }} · {{ ctx.cost_centre_label }} · {{ currency }}</p>
+  </div>
+  <form class="filters" method="get">
+    <label>Period
+      <select name="period" onchange="this.form.submit()">
+        {% for p in periods %}<option value="{{ p.period_key }}" {% if p.period_key == period.period_key %}selected{% endif %}>{{ p.period_label }}</option>{% endfor %}
+      </select>
+    </label>
+    {% if report.scope == "cost_centre" %}
+    <label>Cost centre
+      <select name="cost_centre" onchange="this.form.submit()">
+        {% if user.cost_centres|length > 1 %}<option value="all">All permitted</option>{% endif %}
+        {% for code, name in user.cost_centres.items() %}<option value="{{ code }}" {% if code == selected_cc %}selected{% endif %}>{{ code }} {{ name }}</option>{% endfor %}
+      </select>
+    </label>
+    {% endif %}
+    <noscript><button>Apply</button></noscript>
+    <a class="button secondary" href="/reports/{{ report.key }}/export?format=xlsx&{{ export_qs() }}">Export Excel</a>
+  </form>
+</div>
+
+{% if view.kpis %}
+<div class="kpis">
+  {% for k in view.kpis %}
+  <div class="kpi"><span>{{ k.label }}</span><strong {% if k.value is negative %}class="neg"{% endif %}>{{ k.value | cell(k.kind) }}</strong>{% if k.detail %}<small>{{ k.detail }}</small>{% endif %}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if view.commentary %}
+<section class="card commentary">
+  <h2>Commentary</h2>
+  {% for line in view.commentary %}<p>{{ line }}</p>{% endfor %}
+  <p class="muted small">Written from the reporting views for {{ period.period_label }}; every figure above ties to the tables in this app.</p>
+</section>
+{% endif %}
+
+{% if charts %}
+<div class="charts">
+  {% for c in charts %}
+  <figure class="card chart"><figcaption>{{ c.title }}</figcaption><div class="canvas-wrap"><canvas data-chart="{{ loop.index0 }}"></canvas></div></figure>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% for t in view.tables %}
+<section class="card">
+  <div class="table-head">
+    <h2>{{ t.title }}</h2>
+    <a class="small" href="/reports/{{ report.key }}/export?format=csv&table={{ loop.index0 }}&{{ export_qs() }}">Download CSV</a>
+  </div>
+  {% if t.rows %}
+  <div class="table-wrap">
+  <table>
+    <thead><tr>{% for c in t.columns %}<th class="{{ c.kind }}">{{ c.label }}</th>{% endfor %}</tr></thead>
+    <tbody>
+    {% for row in t.rows %}
+      <tr class="{{ row._class or '' }}">
+      {% for c in t.columns %}
+        {% set v = row.get(c.key) %}
+        <td class="{{ c.kind }}{% if v is negative %} neg{% endif %}{% if c.kind == 'status' and v %} status-{{ v|lower|replace(' ', '-') }}{% endif %}">{{ v | cell(c.kind) }}</td>
+      {% endfor %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}<p class="muted">Nothing to show for this selection.</p>{% endif %}
+  {% if t.note %}<p class="muted small">{{ t.note }}</p>{% endif %}
+</section>
+{% endfor %}
+
+{% for n in view.notes %}<p class="muted small">{{ n }}</p>{% endfor %}
+<script type="application/json" id="chart-data">{{ charts | tojson }}</script>
+{% endblock %}
+{% block scripts %}
+<script src="/static/chart.umd.js"></script>
+<script src="/static/charts.js"></script>
+{% endblock %}
